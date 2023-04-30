@@ -6,6 +6,7 @@ const products = [
   { name: "Cabbage:", country: "USA", cost: 1, instock: 8 },
 ];
 //=========Cart=============
+
 const Cart = (props) => {
   const { Card, Accordion, Button } = ReactBootstrap;
   let data = props.location.data ? props.location.data : products;
@@ -106,6 +107,7 @@ const Products = (props) => {
   } = ReactBootstrap;
 
   //  Fetch Data
+
   const { Fragment, useState, useEffect, useReducer } = React;
   const [query, setQuery] = useState("http://localhost:1337/products");
   const [{ data, isLoading, isError }, doFetch] = useDataApi(
@@ -127,37 +129,52 @@ const Products = (props) => {
 
     //doFetch(query);
   };
-  const deleteCartItem = (index) => {
-    let newCart = cart.filter((item, i) => index != i);
+  
+  const deleteCartItem = (deleteIndex) => {
+    let newCart = cart.filter((item, i) => deleteIndex != i);
+    let target = cart.filter((item, index) => deleteIndex == index);
+    let newItems = items.map((item, index) => {
+      if (item.name == target[0].name) item.instock = item.instock + 1;
+      return item;
+    });
     setCart(newCart);
+    setItems(newItems);
   };
+
   const photos = ["apple.png", "orange.png", "beans.png", "cabbage.png"];
 
   let list = items.map((item, index) => {
     //let n = index + 1049;
     //let url = "https://picsum.photos/id/" + n + "/50/50";
 
-    return (
+  return (
       <li key={index}>
         <Image src={photos[index % 4]} width={70} roundedCircle></Image>
         <Button variant="primary" size="large">
-          {item.name}:{item.cost}
+          {item.name}:{item.cost}-Stock={item.instock}
         </Button>
         <input name={item.name} type="submit" onClick={addToCart}></input>
       </li>
     );
   });
+
   let cartList = cart.map((item, index) => {
-    return (
-      <Accordion.Item key={1+index} eventKey={1 + index}>
-      <Accordion.Header>
-        {item.name}
-      </Accordion.Header>
-      <Accordion.Body onClick={() => deleteCartItem(index)}
-        eventKey={1 + index}>
-        $ {item.cost} from {item.country}
-      </Accordion.Body>
-    </Accordion.Item>
+    
+  return (  <Card key={index}>
+      <Card.Header>
+        <Accordion.Toggle as={Button} variant="link" eventKey={1 + index}>
+          {item.name}
+        </Accordion.Toggle>
+      </Card.Header>
+        <Accordion.Collapse
+          onClick={() => deleteCartItem(index)}
+          eventKey={1 + index}
+        >
+      <Card.Body>
+         $ {item.cost} from {item.country}
+      </Card.Body>
+        </Accordion.Collapse>
+    </Card>
     );
   });
 
@@ -178,10 +195,29 @@ const Products = (props) => {
     const reducer = (accum, current) => accum + current;
     let newTotal = costs.reduce(reducer, 0);
     console.log(`total updated to ${newTotal}`);
+    cart.map((item, index) => deleteCartItem(index));
     return newTotal;
   };
+
   // TODO: implement the restockProducts function
+
   const restockProducts = (url) => {};
+    console.log("*************************");
+    console.log(url.query);
+  doFetch(url.query);
+    console.log("products " + products)
+
+  let newItems = products.map((item) => {
+
+  let { name, country, cost, instock } = item;
+      console.log("*************************");
+      console.log(item.attributes);
+
+  return { name, country, cost, instock };
+  });
+
+  setItems([...items, ...newItems]);
+  };
 
   return (
     <Container>
@@ -201,13 +237,13 @@ const Products = (props) => {
         </Col>
       </Row>
       <Row>
-        <form
+      <form
           onSubmit={(event) => {
-            restockProducts(`http://localhost:1337/${query}`);
-            console.log(`Restock called on ${query}`);
             event.preventDefault();
-          }}
-        >
+            console.log(`Restock called on ${query}`);
+            restockProducts({query}); 
+          }}>
+
           <input
             type="text"
             value={query}
@@ -218,6 +254,6 @@ const Products = (props) => {
       </Row>
     </Container>
   );
-};
+
 // ========================================
 ReactDOM.render(<Products />, document.getElementById("root"));
